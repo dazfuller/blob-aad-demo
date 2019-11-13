@@ -2,9 +2,8 @@ import json
 
 from typing import Dict
 
-import adal
-from azure.storage.blob import BlockBlobService
-from azure.storage.common import TokenCredential
+from azure.storage.blob import BlobClient, BlobServiceClient, ContainerClient
+from azure.identity import ClientSecretCredential
 
 
 # Load the client credentials from the configuration file
@@ -13,32 +12,39 @@ with open('appsettings.json', 'r') as f:
 
 RESOURCE: str = 'https://storage.azure.com/'
 
-# 
-# Change these for your storage account details
-# 
-SA_NAME: str = 'blobaaddemo'
+# CHANGE these for your our storage account details
+SA_NAME: str = 'polydataswtusysohtfec'
 CONTAINER: str = 'demo'
 
-authority_url: str = f'https://login.microsoftonline.com/{config["tenantId"]}'
-client_id: str = config['clientId']
-client_secret: str = config['clientSecret']
+def run():
+    tenant_id: str = config["tenantId"]
+    client_id: str = config['clientId']
+    client_secret: str = config['clientSecret']
 
-# Authenticate with the AAD service principal and retrieve the access token
-context: adal.AuthenticationContext = adal.AuthenticationContext(authority_url)
-token: Dict = context.acquire_token_with_client_credentials(
-    RESOURCE,
-    client_id,
-    client_secret
-)
-access_token: TokenCredential = TokenCredential(token['accessToken'])
+    # Authenticate with the AAD service principan
+    credential: ClientSecretCredential = ClientSecretCredential(tenant_id, client_id, client_secret)
 
-# Create a new block blob service instance
-blob_service: BlockBlobService = BlockBlobService(SA_NAME, token_credential=access_token)
+    # Create a new block blob service instance
+    blob_service: BlobServiceClient = BlobServiceClient(
+        account_url=f'https://{SA_NAME}.blob.core.windows.net',
+        credential=credential
+    )
 
-# Check to see if the test file exists, if so the delete it
-if blob_service.exists(CONTAINER, 'test.txt'):
-    blob_service.delete_blob(CONTAINER, 'test.txt')
+    # Check to see if the test file exists, if so the delete it
+    container_client: ContainerClient
 
-# Create a new blob from text
-blob_service.create_blob_from_text(CONTAINER, 'test.txt', text='Hello world from your friendly service principal')
-print('Blob created')
+    if CONTAINER in [c.name for c in blob_service.list_containers()]:
+        print('Container already exists')
+        container_client = blob_service.get_container_client(CONTAINER)
+    else:
+        print('Creating container')
+        container_client = blob_service.create_container(CONTAINER)
+
+    # Create a new blob from text
+    print('Uploading blob data')
+    blob_client: BlobClient = container_client.get_blob_client('test.txt')
+    data: bytes = 'Hello world from your friendly service principal'.encode('utf-8')
+    blob_client.upload_blob(data, blob_type='BlockBlob', length=len(data), overwrite=True)
+
+if __name__ == "__main__":
+    run()
