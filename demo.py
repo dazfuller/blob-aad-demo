@@ -14,13 +14,17 @@ with open('appsettings.json', 'r') as f:
 SA_NAME: str = 'polydataswtusysohtfec'
 CONTAINER: str = 'demo'
 
+
 def run():
     tenant_id: str = config["tenantId"]
     client_id: str = config['clientId']
     client_secret: str = config['clientSecret']
 
-    # Authenticate with the AAD service principan
-    credential: ClientSecretCredential = ClientSecretCredential(tenant_id, client_id, client_secret)
+    # Authenticate with the AAD service principal
+    credential: ClientSecretCredential = ClientSecretCredential(
+        tenant_id,
+        client_id,
+        client_secret)
 
     # Create a new block blob service instance
     blob_service: BlobServiceClient = BlobServiceClient(
@@ -41,8 +45,11 @@ def run():
     # Create a new blob from text
     print('Uploading blob data')
     blob_client: BlobClient = container_client.get_blob_client('test.txt')
-    data: bytes = 'Hello world from your friendly service principal'.encode('utf-8')
-    blob_client.upload_blob(data, blob_type='BlockBlob', length=len(data), overwrite=True)
+    data: bytes = 'Hello world from your friendly service principal'\
+        .encode('utf-8')
+    blob_client.upload_blob(data, blob_type='BlockBlob', length=len(data),
+                            overwrite=True)
+
 
 if __name__ == "__main__":
     run()
