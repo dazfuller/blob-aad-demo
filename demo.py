@@ -10,8 +10,6 @@ from azure.identity import ClientSecretCredential
 with open('appsettings.json', 'r') as f:
     config: Dict = json.load(f)
 
-RESOURCE: str = 'https://storage.azure.com/'
-
 # CHANGE these for your our storage account details
 SA_NAME: str = 'polydataswtusysohtfec'
 CONTAINER: str = 'demo'
